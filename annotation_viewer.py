@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 
 # Load the CSV file
 df = pd.read_csv('test_annotated_1.csv')
@@ -23,12 +22,8 @@ def main():
         selected_scores = df.loc[df['Title'] == selected_title, scores].values[0]
 
         st.subheader(f"Scores for '{selected_title}':")
-        fig, ax = plt.subplots()
-        ax.barh(score_labels, selected_scores, color='skyblue')
-        ax.set_xlim(0, 3)
-        ax.set_xlabel('Score (out of 3)')
-        ax.set_title('Scores for Different Dimensions')
-        st.pyplot(fig)
+        score_data = pd.DataFrame({'Dimension': score_labels, 'Score': selected_scores})
+        st.bar_chart(score_data.set_index('Dimension'))
 
     # Dropdown for selecting a dimension
     dimensions = ['Characters', 'Events', 'Geography', 'Biology', 'Physics']
