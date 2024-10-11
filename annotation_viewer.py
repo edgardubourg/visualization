@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import altair as alt
 
 # Load the CSV file
 df = pd.read_csv('test_annotated_1.csv')
@@ -28,8 +29,16 @@ def main():
         st.subheader(f"Scores for '{selected_title}':")
         score_data = pd.DataFrame({'Dimension': score_labels, 'Score': selected_scores})
         
-        # Set a maximum range of the bar chart to 3
-        st.bar_chart(score_data.set_index('Dimension'), use_container_width=True)
+        # Use Altair to display a bar chart with fixed y-axis limits
+        chart = alt.Chart(score_data).mark_bar().encode(
+            x=alt.X('Dimension', sort=None),
+            y=alt.Y('Score', scale=alt.Scale(domain=[0, 3]))
+        ).properties(
+            width=600,
+            height=400
+        )
+
+        st.altair_chart(chart, use_container_width=True)
 
     # Dropdown for selecting a dimension
     dimensions = ['Characters', 'Events', 'Geography', 'Biology', 'Physics']
@@ -44,4 +53,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
