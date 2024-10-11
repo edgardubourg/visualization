@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 
 # Load the CSV file
 df = pd.read_csv('test_annotated_1.csv')
@@ -19,11 +20,16 @@ def main():
     if selected_title:
         scores = ['score_characters', 'score_events', 'score_geography', 'score_biology', 'score_physics']
         score_labels = ['Characters', 'Events', 'Geography', 'Biology', 'Physics']
+        
+        # Ensure scores are between 0 and 3
         selected_scores = df.loc[df['Title'] == selected_title, scores].values[0]
+        selected_scores = np.clip(selected_scores, 0, 3)  # Clip values to ensure they are within the 0-3 range
 
         st.subheader(f"Scores for '{selected_title}':")
         score_data = pd.DataFrame({'Dimension': score_labels, 'Score': selected_scores})
-        st.bar_chart(score_data.set_index('Dimension'))
+        
+        # Set a maximum range of the bar chart to 3
+        st.bar_chart(score_data.set_index('Dimension'), use_container_width=True)
 
     # Dropdown for selecting a dimension
     dimensions = ['Characters', 'Events', 'Geography', 'Biology', 'Physics']
@@ -38,3 +44,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
