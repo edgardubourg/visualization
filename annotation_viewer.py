@@ -4,7 +4,7 @@ import numpy as np
 import altair as alt
 
 # Load the CSV file
-df = pd.read_csv('test_annotated_1.csv')
+df = pd.read_csv('data_annotated_1.csv')
 
 # Streamlit App
 def main():
