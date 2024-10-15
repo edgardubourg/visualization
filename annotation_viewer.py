@@ -38,7 +38,7 @@ def main():
 
         # Display scores with contextual consideration
         with col1:
-            st.subheader("With the mention: \"The evaluation should consider the standards and context of the time.\" in the prompt")
+            st.subheader("With mention: \"Consider the standards and context of the time.\"")
             chart_with = alt.Chart(score_data_with).mark_bar().encode(
                 x=alt.X('Dimension', sort=None),
                 y=alt.Y('Score', scale=alt.Scale(domain=[0, 4]))
@@ -48,9 +48,16 @@ def main():
             )
             st.altair_chart(chart_with, use_container_width=True)
 
+            # Display the relevant annotation
+            st.subheader(f"Annotations for '{selected_title}' (With Mention):")
+            for dimension in score_labels:
+                annotation_column = f'annotation_{dimension.lower()}'
+                annotation_text = df_with.loc[df_with['Title'] == selected_title, annotation_column].values[0]
+                st.write(f"{dimension}: {annotation_text}")
+
         # Display scores without contextual consideration
         with col2:
-            st.subheader("Without the mention \"The evaluation should consider the standards and context of the time.\" in the prompt")
+            st.subheader("Without mention: \"Consider the standards and context of the time.\"")
             chart_without = alt.Chart(score_data_without).mark_bar().encode(
                 x=alt.X('Dimension', sort=None),
                 y=alt.Y('Score', scale=alt.Scale(domain=[0, 4]))
@@ -59,6 +66,13 @@ def main():
                 height=400
             )
             st.altair_chart(chart_without, use_container_width=True)
+
+            # Display the relevant annotation
+            st.subheader(f"Annotations for '{selected_title}' (Without Mention):")
+            for dimension in score_labels:
+                annotation_column = f'annotation_{dimension.lower()}'
+                annotation_text = df_without.loc[df_without['Title'] == selected_title, annotation_column].values[0]
+                st.write(f"{dimension}: {annotation_text}")
 
 if __name__ == "__main__":
     main()
