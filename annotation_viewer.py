@@ -4,8 +4,8 @@ import numpy as np
 import altair as alt
 
 # Load the CSV files
-df_with = pd.read_csv('with.csv')
-df_without = pd.read_csv('without.csv')
+df_with = pd.read_csv('without.csv')
+df_without = pd.read_csv('with.csv')
 
 # Streamlit App
 def main():
