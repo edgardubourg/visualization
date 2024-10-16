@@ -21,9 +21,9 @@ def main():
         scores = ['score_characters', 'score_events', 'score_settings']
         score_labels = ['Characters', 'Events', 'Settings']
 
-        # Ensure scores are between 0 and 5
+        # Ensure scores are between 0 and 6
         selected_scores = df.loc[df['Title'] == selected_title, scores].values[0]
-        selected_scores = np.clip(selected_scores, 0, 5)
+        selected_scores = np.clip(selected_scores, 0, 6)
 
         # Display scores
         st.subheader(f"Scores for '{selected_title}':")
@@ -32,7 +32,7 @@ def main():
         # Use Altair to display a bar chart with fixed y-axis limits
         chart = alt.Chart(score_data).mark_bar().encode(
             x=alt.X('Dimension', sort=None),
-            y=alt.Y('Score', scale=alt.Scale(domain=[0, 5]))
+            y=alt.Y('Score', scale=alt.Scale(domain=[0, 6]))
         ).properties(
             width=600,
             height=400
