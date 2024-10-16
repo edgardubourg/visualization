@@ -4,12 +4,12 @@ import numpy as np
 import altair as alt
 
 # Load the CSV file
-df = pd.read_csv('data_annotated_4.csv')
+df = pd.read_csv('data_full_annotated_characters.csv')
 
 # Streamlit App
 def main():
     st.title("Interactive Annotation Viewer")
-    st.write("Select a work and a dimension to view relevant annotations.")
+    st.write("Select a work to view relevant annotations.")
 
     # Extract unique works
     titles = df['Title'].unique()
@@ -18,16 +18,15 @@ def main():
     selected_title = st.selectbox('Select a Work:', titles)
 
     if selected_title:
-        scores = ['score_characters', 'score_events', 'score_settings']
-        score_labels = ['Characters', 'Events', 'Settings']
+        score_label = 'Characters'
 
         # Ensure scores are between 0 and 6
-        selected_scores = df.loc[df['Title'] == selected_title, scores].values[0]
-        selected_scores = np.clip(selected_scores, 0, 6)
+        selected_score = df.loc[df['Title'] == selected_title, 'score_characters'].values[0]
+        selected_score = np.clip(selected_score, 0, 6)
 
-        # Display scores
-        st.subheader(f"Scores for '{selected_title}':")
-        score_data = pd.DataFrame({'Dimension': score_labels, 'Score': selected_scores})
+        # Display score
+        st.subheader(f"Score for '{selected_title}':")
+        score_data = pd.DataFrame({'Dimension': [score_label], 'Score': [selected_score]})
 
         # Use Altair to display a bar chart with fixed y-axis limits
         chart = alt.Chart(score_data).mark_bar().encode(
@@ -40,21 +39,15 @@ def main():
 
         st.altair_chart(chart, use_container_width=True)
 
-        # Dropdown for selecting a dimension
-        selected_dimension = st.selectbox('Select a Dimension:', score_labels)
-
         # Display the relevant annotation
-        if selected_dimension:
-            annotation_column = f'annotation_{selected_dimension.lower()}'
-            annotation_text = df.loc[df['Title'] == selected_title, annotation_column].values[0]
-            st.subheader(f"Annotations for '{selected_title}' - {selected_dimension}:")
-            st.write(annotation_text)
+        annotation_text = df.loc[df['Title'] == selected_title, 'annotation_characters'].values[0]
+        st.subheader(f"Annotations for '{selected_title}' - {score_label}:")
+        st.write(annotation_text)
 
     # Display the entire table sorted by fictionality score
     st.subheader("All Works Sorted by Fictionality Score:")
-    df['fictionality'] = df['score_characters'] + df['score_events'] + df['score_settings']
-    sorted_df = df.sort_values(by='fictionality', ascending=False)
-    st.dataframe(sorted_df[['Title', 'score_characters', 'score_events', 'score_settings', 'fictionality']])
+    sorted_df = df.sort_values(by='score_characters', ascending=False)
+    st.dataframe(sorted_df[['Title', 'score_characters']])
 
 if __name__ == "__main__":
     main()
