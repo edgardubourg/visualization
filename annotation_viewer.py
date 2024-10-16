@@ -3,17 +3,16 @@ import pandas as pd
 import numpy as np
 import altair as alt
 
-# Load the CSV files
-df_with = pd.read_csv('without.csv')
-df_without = pd.read_csv('with.csv')
+# Load the CSV file
+df = pd.read_csv('data_annotated_4.csv')
 
 # Streamlit App
 def main():
     st.title("Interactive Annotation Viewer")
-    st.write("Compare annotations with and without contextual consideration.")
+    st.write("Select a work and a dimension to view relevant annotations.")
 
     # Extract unique works
-    titles = df_with['Title'].unique()
+    titles = df['Title'].unique()
 
     # Dropdown for selecting a work
     selected_title = st.selectbox('Select a Work:', titles)
@@ -22,57 +21,40 @@ def main():
         scores = ['score_characters', 'score_events', 'score_settings']
         score_labels = ['Characters', 'Events', 'Settings']
 
-        # Ensure scores are between 0 and 4 for both datasets
-        selected_scores_with = df_with.loc[df_with['Title'] == selected_title, scores].values[0]
-        selected_scores_with = np.clip(selected_scores_with, 0, 4)
+        # Ensure scores are between 0 and 5
+        selected_scores = df.loc[df['Title'] == selected_title, scores].values[0]
+        selected_scores = np.clip(selected_scores, 0, 5)
 
-        selected_scores_without = df_without.loc[df_without['Title'] == selected_title, scores].values[0]
-        selected_scores_without = np.clip(selected_scores_without, 0, 4)
+        # Display scores
+        st.subheader(f"Scores for '{selected_title}':")
+        score_data = pd.DataFrame({'Dimension': score_labels, 'Score': selected_scores})
 
-        # Create dataframes for scores
-        score_data_with = pd.DataFrame({'Dimension': score_labels, 'Score': selected_scores_with})
-        score_data_without = pd.DataFrame({'Dimension': score_labels, 'Score': selected_scores_without})
+        # Use Altair to display a bar chart with fixed y-axis limits
+        chart = alt.Chart(score_data).mark_bar().encode(
+            x=alt.X('Dimension', sort=None),
+            y=alt.Y('Score', scale=alt.Scale(domain=[0, 5]))
+        ).properties(
+            width=600,
+            height=400
+        )
 
-        # Create two columns for side-by-side comparison
-        col1, col2 = st.columns(2)
+        st.altair_chart(chart, use_container_width=True)
 
-        # Display scores with contextual consideration
-        with col1:
-            st.subheader("With mention: \"Consider the standards and context of the time.\"")
-            chart_with = alt.Chart(score_data_with).mark_bar().encode(
-                x=alt.X('Dimension', sort=None),
-                y=alt.Y('Score', scale=alt.Scale(domain=[0, 4]))
-            ).properties(
-                width=300,
-                height=400
-            )
-            st.altair_chart(chart_with, use_container_width=True)
+        # Dropdown for selecting a dimension
+        selected_dimension = st.selectbox('Select a Dimension:', score_labels)
 
-            # Display the relevant annotation
-            st.subheader(f"Annotations for '{selected_title}' (With Mention):")
-            for dimension in score_labels:
-                annotation_column = f'annotation_{dimension.lower()}'
-                annotation_text = df_with.loc[df_with['Title'] == selected_title, annotation_column].values[0]
-                st.write(f"{dimension}: {annotation_text}")
+        # Display the relevant annotation
+        if selected_dimension:
+            annotation_column = f'annotation_{selected_dimension.lower()}'
+            annotation_text = df.loc[df['Title'] == selected_title, annotation_column].values[0]
+            st.subheader(f"Annotations for '{selected_title}' - {selected_dimension}:")
+            st.write(annotation_text)
 
-        # Display scores without contextual consideration
-        with col2:
-            st.subheader("Without mention: \"Consider the standards and context of the time.\"")
-            chart_without = alt.Chart(score_data_without).mark_bar().encode(
-                x=alt.X('Dimension', sort=None),
-                y=alt.Y('Score', scale=alt.Scale(domain=[0, 4]))
-            ).properties(
-                width=300,
-                height=400
-            )
-            st.altair_chart(chart_without, use_container_width=True)
-
-            # Display the relevant annotation
-            st.subheader(f"Annotations for '{selected_title}' (Without Mention):")
-            for dimension in score_labels:
-                annotation_column = f'annotation_{dimension.lower()}'
-                annotation_text = df_without.loc[df_without['Title'] == selected_title, annotation_column].values[0]
-                st.write(f"{dimension}: {annotation_text}")
+    # Display the entire table sorted by fictionality score
+    st.subheader("All Works Sorted by Fictionality Score:")
+    df['fictionality'] = df['score_characters'] + df['score_events'] + df['score_settings']
+    sorted_df = df.sort_values(by='fictionality', ascending=False)
+    st.dataframe(sorted_df[['Title', 'score_characters', 'score_events', 'score_settings', 'fictionality']])
 
 if __name__ == "__main__":
     main()
