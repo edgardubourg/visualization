@@ -11,12 +11,13 @@ def main():
     st.title("Interactive Annotation Viewer")
     st.write("Select a work to view relevant annotations.")
 
-    # Check if the expected columns exist in the DataFrame
-    if 'Title' not in df.columns or 'score_characters' not in df.columns or 'annotation_characters' not in df.columns:
-        st.error("The dataset is missing required columns. Please check the CSV file.")
-        return
+    # Debugging: Display available columns
+    st.write("Available columns in dataset:", df.columns.tolist())
 
     # Extract unique works
+    if 'Title' not in df.columns:
+        st.error("The dataset is missing the 'Title' column.")
+        return
     titles = df['Title'].unique()
 
     # Dropdown for selecting a work
@@ -26,6 +27,9 @@ def main():
         score_label = 'Characters'
 
         # Ensure scores are between 0 and 6
+        if 'score_characters' not in df.columns:
+            st.error("The dataset is missing the 'score_characters' column.")
+            return
         selected_score = df.loc[df['Title'] == selected_title, 'score_characters'].values[0]
         selected_score = np.clip(selected_score, 0, 6)
 
@@ -45,14 +49,18 @@ def main():
         st.altair_chart(chart, use_container_width=True)
 
         # Display the relevant annotation
+        if 'annotation_characters' not in df.columns:
+            st.error("The dataset is missing the 'annotation_characters' column.")
+            return
         annotation_text = df.loc[df['Title'] == selected_title, 'annotation_characters'].values[0]
         st.subheader(f"Annotations for '{selected_title}' - {score_label}:")
         st.write(annotation_text)
 
-    # Display the entire table sorted by fictionality score
-    st.subheader("All Works Sorted by Fictionality Score:")
-    sorted_df = df.sort_values(by='score_characters', ascending=False)
-    st.dataframe(sorted_df[['Title', 'score_characters']])
+    # Display the entire table sorted by characters score
+    if 'score_characters' in df.columns:
+        st.subheader("All Works Sorted by Character Score:")
+        sorted_df = df.sort_values(by='score_characters', ascending=False)
+        st.dataframe(sorted_df[['Title', 'score_characters']])
 
 if __name__ == "__main__":
     main()
