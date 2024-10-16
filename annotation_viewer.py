@@ -11,6 +11,11 @@ def main():
     st.title("Interactive Annotation Viewer")
     st.write("Select a work to view relevant annotations.")
 
+    # Check if the expected columns exist in the DataFrame
+    if 'Title' not in df.columns or 'score_characters' not in df.columns or 'annotation_characters' not in df.columns:
+        st.error("The dataset is missing required columns. Please check the CSV file.")
+        return
+
     # Extract unique works
     titles = df['Title'].unique()
 
