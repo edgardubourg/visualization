@@ -13,22 +13,18 @@ def main():
     st.title("Interactive Annotation Viewer")
     st.write("Filter works by century and region, then select a work to view relevant annotations.")
 
-    # Debugging: Display available columns
-    st.write("Available columns in dataset:", df.columns.tolist())
-
     # Check if required columns exist
-    required_columns = ['title', 'year', 'region', 'score_characters', 'annotation_characters']
+    required_columns = ['title', 'century', 'zone', 'score_characters', 'annotation_characters']
     missing_columns = [col for col in required_columns if col not in df.columns]
     if missing_columns:
         st.error(f"The dataset is missing required columns: {missing_columns}")
         return
 
     # Dropdown for selecting century
-    centuries = df['year'].dropna().apply(lambda x: (int(x) // 100) * 100).unique()
-    selected_century = st.selectbox('Select a Century:', sorted(centuries))
+    selected_century = st.selectbox('Select a Century:', sorted(df['century'].dropna().unique()))
 
     # Filter by selected century
-    filtered_df = df[df['year'].apply(lambda x: (int(x) // 100) * 100) == selected_century]
+    filtered_df = df[df['century'] == selected_century]
 
     # Display average score for the selected century
     if not filtered_df.empty:
@@ -36,11 +32,11 @@ def main():
         st.write(f"Average Character Score for {selected_century}s: {average_century_score:.2f}")
 
     # Dropdown for selecting country/region
-    regions = filtered_df['region'].unique()
+    regions = filtered_df['zone'].unique()
     selected_region = st.selectbox('Select a Region:', sorted(regions))
 
     # Filter by selected region
-    region_filtered_df = filtered_df[filtered_df['region'] == selected_region]
+    region_filtered_df = filtered_df[filtered_df['zone'] == selected_region]
 
     # Display average score for the selected region
     if not region_filtered_df.empty:
