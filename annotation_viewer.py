@@ -13,9 +13,14 @@ def main():
     st.title("Interactive Annotation Viewer")
     st.write("Filter works by century and region, then select a work to view relevant annotations.")
 
+    # Debugging: Display available columns
+    st.write("Available columns in dataset:", df.columns.tolist())
+
     # Check if required columns exist
-    if 'title' not in df.columns or 'year' not in df.columns or 'region' not in df.columns or 'score_characters' not in df.columns:
-        st.error("The dataset is missing required columns ('title', 'year', 'region', 'score_characters').")
+    required_columns = ['title', 'year', 'region', 'score_characters', 'annotation_characters']
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    if missing_columns:
+        st.error(f"The dataset is missing required columns: {missing_columns}")
         return
 
     # Dropdown for selecting century
@@ -50,9 +55,6 @@ def main():
 
     if selected_title:
         # Display the relevant annotation
-        if 'annotation_characters' not in df.columns:
-            st.error("The dataset is missing the 'annotation_characters' column.")
-            return
         annotation_text = df.loc[df['title'] == selected_title, 'annotation_characters'].values[0]
         st.subheader(f"Annotations for '{selected_title}':")
         st.write(annotation_text)
