@@ -20,23 +20,32 @@ def main():
         st.error(f"The dataset is missing required columns: {missing_columns}")
         return
 
-    # Dropdown for selecting century
-    selected_century = st.selectbox('Select a Century:', sorted(df['century'].dropna().unique()))
+    # Dropdown for selecting century with 'All' option
+    centuries = sorted(df['century'].dropna().unique())
+    centuries.insert(0, 'All')
+    selected_century = st.selectbox('Select a Century:', centuries)
 
     # Filter by selected century
-    filtered_df = df[df['century'] == selected_century]
+    if selected_century == 'All':
+        filtered_df = df
+    else:
+        filtered_df = df[df['century'] == selected_century]
 
     # Display average score for the selected century
     if not filtered_df.empty:
         average_century_score = filtered_df['score_characters'].mean()
         st.write(f"Average Character Score for {selected_century}s: {average_century_score:.2f}")
 
-    # Dropdown for selecting country/region
-    regions = filtered_df['zone'].unique()
-    selected_region = st.selectbox('Select a Region:', sorted(regions))
+    # Dropdown for selecting country/region with 'All' option
+    regions = sorted(filtered_df['zone'].unique())
+    regions.insert(0, 'All')
+    selected_region = st.selectbox('Select a Region:', regions)
 
     # Filter by selected region
-    region_filtered_df = filtered_df[filtered_df['zone'] == selected_region]
+    if selected_region == 'All':
+        region_filtered_df = filtered_df
+    else:
+        region_filtered_df = filtered_df[filtered_df['zone'] == selected_region]
 
     # Display average score for the selected region
     if not region_filtered_df.empty:
