@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 # Load the CSV file
-df = pd.read_csv('data_full_annotated_characters.csv')
+df = pd.read_csv('data_full_annotated.csv')
 
 # Normalize column names by stripping whitespace and converting to lowercase
 df.columns = df.columns.str.strip().str.lower()
@@ -14,7 +14,8 @@ def main():
     st.write("Filter works by century and region, then select a work to view relevant annotations.")
 
     # Check if required columns exist
-    required_columns = ['title', 'century', 'zone', 'score_characters', 'annotation_characters']
+    required_columns = ['title', 'century', 'zone', 'score_characters', 'annotation_characters',
+                        'score_events', 'annotation_events', 'score_settings', 'annotation_settings']
     missing_columns = [col for col in required_columns if col not in df.columns]
     if missing_columns:
         st.error(f"The dataset is missing required columns: {missing_columns}")
@@ -31,11 +32,6 @@ def main():
     else:
         filtered_df = df[df['century'] == selected_century]
 
-    # Display average score for the selected century
-    if not filtered_df.empty:
-        average_century_score = filtered_df['score_characters'].mean()
-        st.write(f"Average Character Score for {selected_century}s: {average_century_score:.2f}")
-
     # Dropdown for selecting country/region with 'All' option
     regions = sorted(filtered_df['zone'].unique())
     regions.insert(0, 'All')
@@ -47,12 +43,20 @@ def main():
     else:
         region_filtered_df = filtered_df[filtered_df['zone'] == selected_region]
 
-    # Display average score for the selected region
-    if not region_filtered_df.empty:
-        average_region_score = region_filtered_df['score_characters'].mean()
-        st.write(f"Average Character Score for {selected_region}: {average_region_score:.2f}")
+    # Dropdown for selecting a dimension
+    dimensions = ['Characters', 'Events', 'Settings']
+    selected_dimension = st.selectbox('Select a Dimension:', dimensions)
 
-    # Filter titles based on selected century and region
+    # Set the appropriate score and annotation columns based on the selected dimension
+    score_column = f'score_{selected_dimension.lower()}'
+    annotation_column = f'annotation_{selected_dimension.lower()}'
+
+    # Display average score for the selected region and dimension
+    if not region_filtered_df.empty:
+        average_score = region_filtered_df[score_column].mean()
+        st.write(f"Average {selected_dimension} Score for {selected_region}: {average_score:.2f}")
+
+    # Filter titles based on selected century, region, and dimension
     filtered_titles = region_filtered_df['title'].unique()
 
     # Dropdown for selecting a work
@@ -60,8 +64,8 @@ def main():
 
     if selected_title:
         # Display the relevant annotation
-        annotation_text = df.loc[df['title'] == selected_title, 'annotation_characters'].values[0]
-        st.subheader(f"Annotations for '{selected_title}':")
+        annotation_text = df.loc[df['title'] == selected_title, annotation_column].values[0]
+        st.subheader(f"Annotations for '{selected_title}' - {selected_dimension}:")
         st.write(annotation_text)
 
 if __name__ == "__main__":
