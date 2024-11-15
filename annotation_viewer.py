@@ -16,6 +16,9 @@ data = download_data_from_google_drive()
 # Standardize column names to avoid KeyError due to mismatches
 data.columns = data.columns.str.strip().str.lower()
 
+# Debugging: Display the column names to confirm they match the expected names
+st.write("Dataset Columns:", data.columns.tolist())
+
 # Define app structure
 def main():
     st.title("Literature Analysis App")
