@@ -1,22 +1,24 @@
 import streamlit as st
 import pandas as pd
+import requests
+from io import StringIO
 
-# Load dataset using file upload
+# Load dataset using Google Drive link
 @st.cache_data
-def load_data(file):
-    if file is not None:
-        data = pd.read_csv(file)
+def load_data():
+    url = 'https://drive.google.com/uc?export=download&id=1BJU1YDKvjQy6Rhx18CkgVBAvBkuA304M'
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = pd.read_csv(StringIO(response.text))
         # Standardize column names to avoid KeyError due to mismatches
         data.columns = data.columns.str.strip().str.lower()
         return data
     else:
+        st.error("Failed to download dataset. Please check the file link or try again later.")
         return pd.DataFrame()
 
-# File uploader
-uploaded_file = st.file_uploader("Upload CSV Dataset", type=["csv"])
-
 # Load dataset
-data = load_data(uploaded_file)
+data = load_data()
 
 # Debugging: Display the column names to confirm they match the expected names
 if not data.empty:
@@ -25,15 +27,14 @@ if not data.empty:
 # Define app structure
 def main():
     if data.empty:
-        st.error("Dataset could not be loaded. Please upload a valid CSV file.")
+        st.error("Dataset could not be loaded. Please try again later.")
         return
 
     st.title("Literature Analysis App")
     st.header("Explore Fictional Works and Their Characteristics")
 
-    # Dropdown for dataset selection
-    dataset = st.selectbox("Select Dataset", ("Babel", "Other"))
-    filtered_data = data[data['dataset'] == dataset]
+    # Dropdown for dataset selection (all datasets available)
+    filtered_data = data.copy()
     
     # Dropdowns for time period selection
     year = st.selectbox("Select Year", sorted(filtered_data['year'].dropna().unique()))
@@ -46,14 +47,12 @@ def main():
     filtered_data = filtered_data[filtered_data['century'] == century]
     
     # Conditional selection for Babel dataset
-    if dataset == "Babel":
-        author = st.selectbox("Select Author", sorted(filtered_data['author'].dropna().unique()))
-        filtered_data = filtered_data[filtered_data['author'] == author]
+    if 'babel' in filtered_data['dataset'].unique():
+        author = st.selectbox("Select Author (Babel Only)", sorted(filtered_data[filtered_data['dataset'] == 'babel']['author'].dropna().unique()))
+        filtered_data = filtered_data[(filtered_data['dataset'] != 'babel') | (filtered_data['author'] == author)]
         
-        language = st.selectbox("Select Language", sorted(filtered_data['language'].dropna().unique()))
-        filtered_data = filtered_data[filtered_data['language'] == language]
-    else:
-        st.write("Author and Language selection available for Babel dataset only.")
+        language = st.selectbox("Select Language (Babel Only)", sorted(filtered_data[filtered_data['dataset'] == 'babel']['language'].dropna().unique()))
+        filtered_data = filtered_data[(filtered_data['dataset'] != 'babel') | (filtered_data['language'] == language)]
 
     # Dropdown for title selection
     title = st.selectbox("Select Title", filtered_data['title'].dropna().unique())
