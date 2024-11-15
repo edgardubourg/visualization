@@ -1,47 +1,14 @@
 import streamlit as st
 import pandas as pd
-import requests
-import os
-from io import StringIO
-
-# Function to download file from Google Drive with confirmation token
-def download_file_from_google_drive(file_id):
-    URL = "https://drive.google.com/uc?export=download"
-    session = requests.Session()
-    response = session.get(URL, params={'id': file_id}, stream=True)
-    token = get_confirm_token(response)
-
-    if token:
-        params = {'id': file_id, 'confirm': token}
-        response = session.get(URL, params=params, stream=True)
-
-    return response
-
-# Helper function to get confirmation token
-def get_confirm_token(response):
-    for key, value in response.cookies.items():
-        if key.startswith('download_warning'):
-            return value
-    return None
 
 # Load dataset using Google Drive link
 @st.cache_data
 def load_data():
-    try:
-        file_id = '1BJU1YDKvjQy6Rhx18CkgVBAvBkuA304M'
-        response = download_file_from_google_drive(file_id)
-        if response.status_code == 200:
-            content = StringIO(response.content.decode('utf-8'))
-            data = pd.read_csv(content)
-            # Standardize column names to avoid KeyError due to mismatches
-            data.columns = data.columns.str.strip().str.lower()
-            return data
-        else:
-            st.error("Failed to download dataset. Please check the file link or try again later.")
-            return pd.DataFrame()
-    except Exception as e:
-        st.error(f"An error occurred while loading the dataset: {str(e)}")
-        return pd.DataFrame()
+    url = 'https://drive.google.com/uc?export=download&id=1BJU1YDKvjQy6Rhx18CkgVBAvBkuA304M'
+    data = pd.read_csv(url)
+    # Standardize column names to avoid KeyError due to mismatches
+    data.columns = data.columns.str.strip().str.lower()
+    return data
 
 # Load dataset
 data = load_data()
