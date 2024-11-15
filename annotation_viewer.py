@@ -1,11 +1,15 @@
 import streamlit as st
 import pandas as pd
+import gdown
+import os
 
 # Load dataset using Google Drive link
 @st.cache_data
 def load_data():
     url = 'https://drive.google.com/uc?export=download&id=1BJU1YDKvjQy6Rhx18CkgVBAvBkuA304M'
-    data = pd.read_csv(url)
+    output = '/tmp/full_annotated.csv'
+    gdown.download(url, output, quiet=False)
+    data = pd.read_csv(output)
     # Standardize column names to avoid KeyError due to mismatches
     data.columns = data.columns.str.strip().str.lower()
     return data
