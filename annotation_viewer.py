@@ -1,72 +1,69 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 
-# Load the CSV file
-df = pd.read_csv('data_full_annotated.csv')
+# Load dataset
+data = pd.read_csv('/mnt/data/full_annotated.csv')
 
-# Normalize column names by stripping whitespace and converting to lowercase
-df.columns = df.columns.str.strip().str.lower()
-
-# Streamlit App
+# Define app structure
 def main():
-    st.title("Interactive Annotation Viewer")
-    st.write("Filter works by century and region, then select a work to view relevant annotations.")
+    st.title("Literature Analysis App")
+    st.header("Explore Fictional Works and Their Characteristics")
 
-    # Check if required columns exist
-    required_columns = ['title', 'century', 'zone', 'score_characters', 'annotation_characters',
-                        'score_events', 'annotation_events', 'score_settings', 'annotation_settings']
-    missing_columns = [col for col in required_columns if col not in df.columns]
-    if missing_columns:
-        st.error(f"The dataset is missing required columns: {missing_columns}")
-        return
-
-    # Dropdown for selecting century with 'All' option
-    centuries = sorted(df['century'].dropna().unique())
-    centuries.insert(0, 'All')
-    selected_century = st.selectbox('Select a Century:', centuries)
-
-    # Filter by selected century
-    if selected_century == 'All':
-        filtered_df = df
+    # Dropdown for dataset selection
+dataset = st.selectbox("Select Dataset", ("Babel", "Other"))
+    
+    # Dropdowns for time period selection
+    year = st.selectbox("Select Year", sorted(data['Year'].unique()))
+    decade = st.selectbox("Select Decade", sorted(data['Decade'].unique()))
+    century = st.selectbox("Select Century", sorted(data['Century'].unique()))
+    
+    # Conditional selection for Babel dataset
+    if dataset == "Babel":
+        author = st.selectbox("Select Author", sorted(data[data['Dataset'] == 'Babel']['Author'].unique()))
+        language = st.selectbox("Select Language", sorted(data[data['Dataset'] == 'Babel']['Language'].unique()))
     else:
-        filtered_df = df[df['century'] == selected_century]
+        st.write("Author and Language selection available for Babel dataset only.")
+        author = None
+        language = None
 
-    # Dropdown for selecting country/region with 'All' option
-    regions = sorted(filtered_df['zone'].unique())
-    regions.insert(0, 'All')
-    selected_region = st.selectbox('Select a Region:', regions)
+    # Filtering dataset based on user selections
+    filtered_data = data[(data['Dataset'] == dataset) & (data['Year'] == year) &
+                         (data['Decade'] == decade) & (data['Century'] == century)]
+    if author:
+        filtered_data = filtered_data[filtered_data['Author'] == author]
+    if language:
+        filtered_data = filtered_data[filtered_data['Language'] == language]
 
-    # Filter by selected region
-    if selected_region == 'All':
-        region_filtered_df = filtered_df
-    else:
-        region_filtered_df = filtered_df[filtered_df['zone'] == selected_region]
+    # Dropdown for title selection
+title = st.selectbox("Select Title", filtered_data['Title'].unique())
 
-    # Dropdown for selecting a dimension
-    dimensions = ['Characters', 'Events', 'Settings']
-    selected_dimension = st.selectbox('Select a Dimension:', dimensions)
+    # Display information for selected title
+    selected_work = filtered_data[filtered_data['Title'] == title].iloc[0]
+    st.subheader(f"Fictiveness Score: {selected_work['Fictiveness_Score']}")
 
-    # Set the appropriate score and annotation columns based on the selected dimension
-    score_column = f'score_{selected_dimension.lower()}'
-    annotation_column = f'annotation_{selected_dimension.lower()}'
+    # Display table of scores for events, characters, and settings
+    st.table({
+        'Events': [selected_work['Events_Score']],
+        'Characters': [selected_work['Characters_Score']],
+        'Settings': [selected_work['Settings_Score']]
+    })
 
-    # Display average score for the selected region and dimension
-    if not region_filtered_df.empty:
-        average_score = region_filtered_df[score_column].mean()
-        st.write(f"Average {selected_dimension} Score for {selected_region}: {average_score:.2f}")
+    # Display annotations
+    st.markdown("**Events Annotation:**")
+    st.text(selected_work['Annotation_Events'])
+    st.markdown("**Characters Annotation:**")
+    st.text(selected_work['Annotation_Characters'])
+    st.markdown("**Settings Annotation:**")
+    st.text(selected_work['Annotation_Settings'])
 
-    # Filter titles based on selected century, region, and dimension
-    filtered_titles = region_filtered_df['title'].unique()
-
-    # Dropdown for selecting a work
-    selected_title = st.selectbox('Select a Work:', filtered_titles)
-
-    if selected_title:
-        # Display the relevant annotation
-        annotation_text = df.loc[df['title'] == selected_title, annotation_column].values[0]
-        st.subheader(f"Annotations for '{selected_title}' - {selected_dimension}:")
-        st.write(annotation_text)
+    # Display table of works in selected field
+    st.markdown("## List of Works in Selected Field")
+    sorted_works = filtered_data.sort_values(by='Fictiveness_Score', ascending=False)
+    if st.button("Select Work from Table"):
+        title_from_table = st.selectbox("Select from Works Table", sorted_works['Title'])
+        if title_from_table:
+            main(title_from_table)
+    
 
 if __name__ == "__main__":
     main()
