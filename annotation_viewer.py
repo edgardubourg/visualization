@@ -1,18 +1,22 @@
 import streamlit as st
 import pandas as pd
-import gdown
+import requests
 import os
+from io import StringIO
 
 # Load dataset using Google Drive link
 @st.cache_data
 def load_data():
     url = 'https://drive.google.com/uc?export=download&id=1BJU1YDKvjQy6Rhx18CkgVBAvBkuA304M'
-    output = '/tmp/full_annotated.csv'
-    gdown.download(url, output, quiet=False)
-    data = pd.read_csv(output)
-    # Standardize column names to avoid KeyError due to mismatches
-    data.columns = data.columns.str.strip().str.lower()
-    return data
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = pd.read_csv(StringIO(response.text))
+        # Standardize column names to avoid KeyError due to mismatches
+        data.columns = data.columns.str.strip().str.lower()
+        return data
+    else:
+        st.error("Failed to download dataset. Please check the file link or try again later.")
+        return pd.DataFrame()
 
 # Load dataset
 data = load_data()
@@ -63,13 +67,13 @@ def main():
     # Display information for selected title
     if title:
         selected_work = filtered_data[filtered_data['title'] == title].iloc[0]
-        st.subheader(f"Fictiveness Score: {selected_work['fictiveness_score']}")
+        st.subheader(f"Fictiveness Score: {selected_work['fictiveness']}")
 
         # Display table of scores for events, characters, and settings
         st.table({
-            'Events': [selected_work['events_score']],
-            'Characters': [selected_work['characters_score']],
-            'Settings': [selected_work['settings_score']]
+            'Events': [selected_work['score_events']],
+            'Characters': [selected_work['score_characters']],
+            'Settings': [selected_work['score_settings']]
         })
 
         # Display annotations
@@ -82,15 +86,15 @@ def main():
 
     # Display table of works in selected field
     st.markdown("## List of Works in Selected Field")
-    sorted_works = filtered_data.sort_values(by='fictiveness_score', ascending=False)
+    sorted_works = filtered_data.sort_values(by='fictiveness', ascending=False)
     title_from_table = st.selectbox("Select from Works Table", sorted_works['title'].dropna().unique())
     if st.button("Select Work from Table") and title_from_table:
         selected_work = filtered_data[filtered_data['title'] == title_from_table].iloc[0]
-        st.subheader(f"Fictiveness Score: {selected_work['fictiveness_score']}")
+        st.subheader(f"Fictiveness Score: {selected_work['fictiveness']}")
         st.table({
-            'Events': [selected_work['events_score']],
-            'Characters': [selected_work['characters_score']],
-            'Settings': [selected_work['settings_score']]
+            'Events': [selected_work['score_events']],
+            'Characters': [selected_work['score_characters']],
+            'Settings': [selected_work['score_settings']]
         })
         st.markdown("**Events Annotation:**")
         st.text(selected_work['annotation_events'])
