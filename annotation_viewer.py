@@ -13,6 +13,9 @@ def download_data_from_google_drive():
 # Load dataset using Google Drive link
 data = download_data_from_google_drive()
 
+# Standardize column names to avoid KeyError due to mismatches
+data.columns = data.columns.str.strip().str.lower()
+
 # Define app structure
 def main():
     st.title("Literature Analysis App")
@@ -22,58 +25,91 @@ def main():
     dataset = st.selectbox("Select Dataset", ("Babel", "Other"))
     
     # Dropdowns for time period selection
-    year = st.selectbox("Select Year", sorted(data['Year'].unique()))
-    decade = st.selectbox("Select Decade", sorted(data['Decade'].unique()))
-    century = st.selectbox("Select Century", sorted(data['Century'].unique()))
+    if 'year' in data.columns:
+        year = st.selectbox("Select Year", sorted(data['year'].unique()))
+    else:
+        year = None
+    if 'decade' in data.columns:
+        decade = st.selectbox("Select Decade", sorted(data['decade'].unique()))
+    else:
+        decade = None
+    if 'century' in data.columns:
+        century = st.selectbox("Select Century", sorted(data['century'].unique()))
+    else:
+        century = None
     
     # Conditional selection for Babel dataset
     if dataset == "Babel":
-        author = st.selectbox("Select Author", sorted(data[data['Dataset'] == 'Babel']['Author'].unique()))
-        language = st.selectbox("Select Language", sorted(data[data['Dataset'] == 'Babel']['Language'].unique()))
+        if 'dataset' in data.columns and 'babel' in data['dataset'].str.lower().unique():
+            if 'author' in data.columns:
+                author = st.selectbox("Select Author", sorted(data[data['dataset'] == 'babel']['author'].unique()))
+            else:
+                author = None
+            if 'language' in data.columns:
+                language = st.selectbox("Select Language", sorted(data[data['dataset'] == 'babel']['language'].unique()))
+            else:
+                language = None
+        else:
+            st.write("Author and Language selection available for Babel dataset only.")
+            author = None
+            language = None
     else:
         st.write("Author and Language selection available for Babel dataset only.")
         author = None
         language = None
 
     # Filtering dataset based on user selections
-    filtered_data = data[(data['Dataset'] == dataset) & (data['Year'] == year) &
-                         (data['Decade'] == decade) & (data['Century'] == century)]
+    filtered_data = data[data['dataset'] == dataset]
+    if year is not None:
+        filtered_data = filtered_data[filtered_data['year'] == year]
+    if decade is not None:
+        filtered_data = filtered_data[filtered_data['decade'] == decade]
+    if century is not None:
+        filtered_data = filtered_data[filtered_data['century'] == century]
     if author:
-        filtered_data = filtered_data[filtered_data['Author'] == author]
+        filtered_data = filtered_data[filtered_data['author'] == author]
     if language:
-        filtered_data = filtered_data[filtered_data['Language'] == language]
+        filtered_data = filtered_data[filtered_data['language'] == language]
 
     # Dropdown for title selection
-    title = st.selectbox("Select Title", filtered_data['Title'].unique())
+    if 'title' in filtered_data.columns:
+        title = st.selectbox("Select Title", filtered_data['title'].unique())
+    else:
+        title = None
 
     # Display information for selected title
-    selected_work = filtered_data[filtered_data['Title'] == title].iloc[0]
-    st.subheader(f"Fictiveness Score: {selected_work['Fictiveness_Score']}")
+    if title:
+        selected_work = filtered_data[filtered_data['title'] == title].iloc[0]
+        if 'fictiveness_score' in selected_work:
+            st.subheader(f"Fictiveness Score: {selected_work['fictiveness_score']}")
 
-    # Display table of scores for events, characters, and settings
-    st.table({
-        'Events': [selected_work['Events_Score']],
-        'Characters': [selected_work['Characters_Score']],
-        'Settings': [selected_work['Settings_Score']]
-    })
+        # Display table of scores for events, characters, and settings
+        if {'events_score', 'characters_score', 'settings_score'}.issubset(filtered_data.columns):
+            st.table({
+                'Events': [selected_work['events_score']],
+                'Characters': [selected_work['characters_score']],
+                'Settings': [selected_work['settings_score']]
+            })
 
-    # Display annotations
-    st.markdown("**Events Annotation:**")
-    st.text(selected_work['Annotation_Events'])
-    st.markdown("**Characters Annotation:**")
-    st.text(selected_work['Annotation_Characters'])
-    st.markdown("**Settings Annotation:**")
-    st.text(selected_work['Annotation_Settings'])
+        # Display annotations
+        if 'annotation_events' in selected_work:
+            st.markdown("**Events Annotation:**")
+            st.text(selected_work['annotation_events'])
+        if 'annotation_characters' in selected_work:
+            st.markdown("**Characters Annotation:**")
+            st.text(selected_work['annotation_characters'])
+        if 'annotation_settings' in selected_work:
+            st.markdown("**Settings Annotation:**")
+            st.text(selected_work['annotation_settings'])
 
     # Display table of works in selected field
-    st.markdown("## List of Works in Selected Field")
-    sorted_works = filtered_data.sort_values(by='Fictiveness_Score', ascending=False)
-    if st.button("Select Work from Table"):
-        title_from_table = st.selectbox("Select from Works Table", sorted_works['Title'])
-        if title_from_table:
-            main(title_from_table)
-    
+    if 'fictiveness_score' in filtered_data.columns:
+        st.markdown("## List of Works in Selected Field")
+        sorted_works = filtered_data.sort_values(by='fictiveness_score', ascending=False)
+        if st.button("Select Work from Table"):
+            title_from_table = st.selectbox("Select from Works Table", sorted_works['title'])
+            if title_from_table:
+                main(title_from_table)
 
 if __name__ == "__main__":
     main()
-
