@@ -6,11 +6,12 @@ from io import StringIO
 
 # Load dataset using Google Drive link
 @st.cache_data
-def load_data():
+def load_data_chunked():
     url = 'https://drive.google.com/uc?export=download&id=1BJU1YDKvjQy6Rhx18CkgVBAvBkuA304M'
     response = requests.get(url)
     if response.status_code == 200:
-        data = pd.read_csv(StringIO(response.text))
+        data_iterator = pd.read_csv(StringIO(response.text), chunksize=5000)
+        data = pd.concat(data_iterator, ignore_index=True)
         # Standardize column names to avoid KeyError due to mismatches
         data.columns = data.columns.str.strip().str.lower()
         return data
@@ -19,7 +20,7 @@ def load_data():
         return pd.DataFrame()
 
 # Load dataset
-data = load_data()
+data = load_data_chunked()
 
 # Debugging: Display the column names to confirm they match the expected names
 if not data.empty:
@@ -36,30 +37,27 @@ def main():
 
     # Dropdown for dataset selection
     dataset = st.selectbox("Select Dataset", ("Babel", "Other"))
+    filtered_data = data[data['dataset'] == dataset]
     
     # Dropdowns for time period selection
-    year = st.selectbox("Select Year", sorted(data['year'].dropna().unique()))
-    decade = st.selectbox("Select Decade", sorted(data['decade'].dropna().unique()))
-    century = st.selectbox("Select Century", sorted(data['century'].dropna().unique()))
+    year = st.selectbox("Select Year", sorted(filtered_data['year'].dropna().unique()))
+    filtered_data = filtered_data[filtered_data['year'] == year]
+    
+    decade = st.selectbox("Select Decade", sorted(filtered_data['decade'].dropna().unique()))
+    filtered_data = filtered_data[filtered_data['decade'] == decade]
+    
+    century = st.selectbox("Select Century", sorted(filtered_data['century'].dropna().unique()))
+    filtered_data = filtered_data[filtered_data['century'] == century]
     
     # Conditional selection for Babel dataset
     if dataset == "Babel":
-        author = st.selectbox("Select Author", sorted(data[data['dataset'] == 'babel']['author'].dropna().unique()))
-        language = st.selectbox("Select Language", sorted(data[data['dataset'] == 'babel']['language'].dropna().unique()))
+        author = st.selectbox("Select Author", sorted(filtered_data['author'].dropna().unique()))
+        filtered_data = filtered_data[filtered_data['author'] == author]
+        
+        language = st.selectbox("Select Language", sorted(filtered_data['language'].dropna().unique()))
+        filtered_data = filtered_data[filtered_data['language'] == language]
     else:
         st.write("Author and Language selection available for Babel dataset only.")
-        author = None
-        language = None
-
-    # Filtering dataset based on user selections
-    filtered_data = data[data['dataset'] == dataset]
-    filtered_data = filtered_data[filtered_data['year'] == year]
-    filtered_data = filtered_data[filtered_data['decade'] == decade]
-    filtered_data = filtered_data[filtered_data['century'] == century]
-    if author:
-        filtered_data = filtered_data[filtered_data['author'] == author]
-    if language:
-        filtered_data = filtered_data[filtered_data['language'] == language]
 
     # Dropdown for title selection
     title = st.selectbox("Select Title", filtered_data['title'].dropna().unique())
