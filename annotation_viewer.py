@@ -1,26 +1,22 @@
 import streamlit as st
 import pandas as pd
-import requests
-import os
-from io import StringIO
 
-# Load dataset using Google Drive link
+# Load dataset using file upload
 @st.cache_data
-def load_data_sample():
-    url = 'https://drive.google.com/uc?export=download&id=1BJU1YDKvjQy6Rhx18CkgVBAvBkuA304M'
-    response = requests.get(url)
-    if response.status_code == 200:
-        # Load only a sample of the dataset to prevent memory issues
-        data = pd.read_csv(StringIO(response.text), nrows=10000)
+def load_data(file):
+    if file is not None:
+        data = pd.read_csv(file)
         # Standardize column names to avoid KeyError due to mismatches
         data.columns = data.columns.str.strip().str.lower()
         return data
     else:
-        st.error("Failed to download dataset. Please check the file link or try again later.")
         return pd.DataFrame()
 
+# File uploader
+uploaded_file = st.file_uploader("Upload CSV Dataset", type=["csv"])
+
 # Load dataset
-data = load_data_sample()
+data = load_data(uploaded_file)
 
 # Debugging: Display the column names to confirm they match the expected names
 if not data.empty:
@@ -29,7 +25,7 @@ if not data.empty:
 # Define app structure
 def main():
     if data.empty:
-        st.error("Dataset could not be loaded. Please try again later.")
+        st.error("Dataset could not be loaded. Please upload a valid CSV file.")
         return
 
     st.title("Literature Analysis App")
