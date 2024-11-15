@@ -21,14 +21,6 @@ def main():
     st.title("Literature Analysis App")
     st.header("Explore Fictional Works and Their Characteristics")
 
-    # Check if necessary columns exist
-    required_columns = ['dataset', 'year', 'decade', 'century', 'author', 'language', 'title', 'fictiveness_score', 'events_score', 'characters_score', 'settings_score', 'annotation_events', 'annotation_characters', 'annotation_settings']
-    missing_columns = [col for col in required_columns if col not in data.columns]
-
-    if missing_columns:
-        st.error(f"The following required columns are missing from the dataset: {', '.join(missing_columns)}")
-        return
-
     # Dropdown for dataset selection
     dataset = st.selectbox("Select Dataset", ("Babel", "Other"))
     
