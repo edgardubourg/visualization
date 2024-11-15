@@ -1,8 +1,17 @@
 import streamlit as st
 import pandas as pd
+import requests
 
-# Load dataset
-data = pd.read_csv('/mnt/data/full_annotated.csv')
+# Function to download file from Google Drive
+@st.cache_data
+def download_data_from_google_drive():
+    url = 'https://drive.google.com/uc?id=1BJU1YDKvjQy6Rhx18CkgVBAvBkuA304M'
+    response = requests.get(url)
+    open('/tmp/full_annotated.csv', 'wb').write(response.content)
+    return pd.read_csv('/tmp/full_annotated.csv')
+
+# Load dataset using Google Drive link
+data = download_data_from_google_drive()
 
 # Define app structure
 def main():
@@ -10,7 +19,7 @@ def main():
     st.header("Explore Fictional Works and Their Characteristics")
 
     # Dropdown for dataset selection
-dataset = st.selectbox("Select Dataset", ("Babel", "Other"))
+    dataset = st.selectbox("Select Dataset", ("Babel", "Other"))
     
     # Dropdowns for time period selection
     year = st.selectbox("Select Year", sorted(data['Year'].unique()))
@@ -35,7 +44,7 @@ dataset = st.selectbox("Select Dataset", ("Babel", "Other"))
         filtered_data = filtered_data[filtered_data['Language'] == language]
 
     # Dropdown for title selection
-title = st.selectbox("Select Title", filtered_data['Title'].unique())
+    title = st.selectbox("Select Title", filtered_data['Title'].unique())
 
     # Display information for selected title
     selected_work = filtered_data[filtered_data['Title'] == title].iloc[0]
@@ -67,3 +76,4 @@ title = st.selectbox("Select Title", filtered_data['Title'].unique())
 
 if __name__ == "__main__":
     main()
+
