@@ -2,11 +2,11 @@ import streamlit as st
 import pandas as pd
 import requests
 import os
+from io import StringIO
 
 # Function to download file from Google Drive with confirmation token
-def download_file_from_google_drive(file_id, destination):
-    URL = "https://docs.google.com/uc?export=download"
-
+def download_file_from_google_drive(file_id):
+    URL = "https://drive.google.com/uc?export=download"
     session = requests.Session()
     response = session.get(URL, params={'id': file_id}, stream=True)
     token = get_confirm_token(response)
@@ -15,7 +15,7 @@ def download_file_from_google_drive(file_id, destination):
         params = {'id': file_id, 'confirm': token}
         response = session.get(URL, params=params, stream=True)
 
-    save_response_content(response, destination)
+    return response
 
 # Helper function to get confirmation token
 def get_confirm_token(response):
@@ -24,34 +24,38 @@ def get_confirm_token(response):
             return value
     return None
 
-# Helper function to save response content to file
-def save_response_content(response, destination):
-    CHUNK_SIZE = 32768
-
-    with open(destination, "wb") as f:
-        for chunk in response.iter_content(CHUNK_SIZE):
-            if chunk:  # filter out keep-alive new chunks
-                f.write(chunk)
-
 # Load dataset using Google Drive link
 @st.cache_data
 def load_data():
-    file_id = '1BJU1YDKvjQy6Rhx18CkgVBAvBkuA304M'
-    destination = '/tmp/full_annotated.csv'
-    download_file_from_google_drive(file_id, destination)
-    return pd.read_csv(destination)
+    try:
+        file_id = '1BJU1YDKvjQy6Rhx18CkgVBAvBkuA304M'
+        response = download_file_from_google_drive(file_id)
+        if response.status_code == 200:
+            content = StringIO(response.content.decode('utf-8'))
+            data = pd.read_csv(content)
+            # Standardize column names to avoid KeyError due to mismatches
+            data.columns = data.columns.str.strip().str.lower()
+            return data
+        else:
+            st.error("Failed to download dataset. Please check the file link or try again later.")
+            return pd.DataFrame()
+    except Exception as e:
+        st.error(f"An error occurred while loading the dataset: {str(e)}")
+        return pd.DataFrame()
 
 # Load dataset
 data = load_data()
 
-# Standardize column names to avoid KeyError due to mismatches
-data.columns = data.columns.str.strip().str.lower()
-
 # Debugging: Display the column names to confirm they match the expected names
-st.write("Dataset Columns:", data.columns.tolist())
+if not data.empty:
+    st.write("Dataset Columns:", data.columns.tolist())
 
 # Define app structure
 def main():
+    if data.empty:
+        st.error("Dataset could not be loaded. Please try again later.")
+        return
+
     st.title("Literature Analysis App")
     st.header("Explore Fictional Works and Their Characteristics")
 
