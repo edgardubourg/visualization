@@ -6,12 +6,12 @@ from io import StringIO
 
 # Load dataset using Google Drive link
 @st.cache_data
-def load_data_chunked():
+def load_data_sample():
     url = 'https://drive.google.com/uc?export=download&id=1BJU1YDKvjQy6Rhx18CkgVBAvBkuA304M'
     response = requests.get(url)
     if response.status_code == 200:
-        data_iterator = pd.read_csv(StringIO(response.text), chunksize=5000)
-        data = pd.concat(data_iterator, ignore_index=True)
+        # Load only a sample of the dataset to prevent memory issues
+        data = pd.read_csv(StringIO(response.text), nrows=10000)
         # Standardize column names to avoid KeyError due to mismatches
         data.columns = data.columns.str.strip().str.lower()
         return data
@@ -20,7 +20,7 @@ def load_data_chunked():
         return pd.DataFrame()
 
 # Load dataset
-data = load_data_chunked()
+data = load_data_sample()
 
 # Debugging: Display the column names to confirm they match the expected names
 if not data.empty:
