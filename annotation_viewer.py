@@ -1,17 +1,48 @@
 import streamlit as st
 import pandas as pd
 import requests
+import os
 
-# Function to download file from Google Drive
-@st.cache_data
-def download_data_from_google_drive():
-    url = 'https://drive.google.com/uc?id=1BJU1YDKvjQy6Rhx18CkgVBAvBkuA304M'
-    response = requests.get(url)
-    open('/tmp/full_annotated.csv', 'wb').write(response.content)
-    return pd.read_csv('/tmp/full_annotated.csv')
+# Function to download file from Google Drive with confirmation token
+def download_file_from_google_drive(file_id, destination):
+    URL = "https://docs.google.com/uc?export=download"
+
+    session = requests.Session()
+    response = session.get(URL, params={'id': file_id}, stream=True)
+    token = get_confirm_token(response)
+
+    if token:
+        params = {'id': file_id, 'confirm': token}
+        response = session.get(URL, params=params, stream=True)
+
+    save_response_content(response, destination)
+
+# Helper function to get confirmation token
+def get_confirm_token(response):
+    for key, value in response.cookies.items():
+        if key.startswith('download_warning'):
+            return value
+    return None
+
+# Helper function to save response content to file
+def save_response_content(response, destination):
+    CHUNK_SIZE = 32768
+
+    with open(destination, "wb") as f:
+        for chunk in response.iter_content(CHUNK_SIZE):
+            if chunk:  # filter out keep-alive new chunks
+                f.write(chunk)
 
 # Load dataset using Google Drive link
-data = download_data_from_google_drive()
+@st.cache_data
+def load_data():
+    file_id = '1BJU1YDKvjQy6Rhx18CkgVBAvBkuA304M'
+    destination = '/tmp/full_annotated.csv'
+    download_file_from_google_drive(file_id, destination)
+    return pd.read_csv(destination)
+
+# Load dataset
+data = load_data()
 
 # Standardize column names to avoid KeyError due to mismatches
 data.columns = data.columns.str.strip().str.lower()
